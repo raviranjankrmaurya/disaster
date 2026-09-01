@@ -137,8 +137,8 @@ const translations = {
   en: {
     title: "RakshaGrid",
     subtitle: "Global Disaster Operations Command Platform",
-    liveCrisis: "GLOBAL CRISIS OPERATIONS ACTIVE",
-    tickerText: "Bagmati & Koshi River Floods • Tokyo Seismicity • Turkey Fault Rupture • Transboundary Relief Convoys Dispatched",
+    liveCrisis: "NEPAL & GLOBAL CRISIS OPERATIONS ACTIVE",
+    tickerText: "Kathmandu Valley Inundation • Koshi River Surge • Tokyo Seismicity • Turkey Fault Rupture • Transboundary Relief Dispatched",
     menu: "Operations Menu",
     tabMap: "Global Command Map",
     tabVolunteers: "Volunteer Directory",
@@ -167,7 +167,7 @@ const translations = {
     terrain: "Topography",
     registerVolunteer: "Register Volunteer",
     ownerBadge: "✓ You (Owner)",
-    readOnlyBadge: "🔒 Read Only",
+    readOnlyBadge: "🔒 Read Only (Not Owner)",
     confirmRestock: "Update Hub Stock",
     loginTab: "Login",
     registerTab: "Register",
@@ -185,8 +185,8 @@ const translations = {
   hi: {
     title: "रक्षाग्रिड",
     subtitle: "वैश्विक आपदा परिचालन कमान मंच",
-    liveCrisis: "वैश्विक आपदा कमान सक्रिय",
-    tickerText: "बागमती व कोशी नदी बाढ़ • टोक्यो भूकंप • तुर्की फॉल्ट लाइन संकट • सीमापार राहत दल सक्रिय",
+    liveCrisis: "नेपाल एवं वैश्विक आपदा कमान सक्रिय",
+    tickerText: "काठमांडू बागमती जलप्रलय • कोशी नदी उफान • टोक्यो भूकंप • तुर्की फॉल्ट लाइन संकट • सीमापार राहत दल सक्रिय",
     menu: "संचालन मेनू",
     tabMap: "वैश्विक कमान मानचित्र",
     tabVolunteers: "स्वयंसेवक निर्देशिका",
@@ -535,9 +535,13 @@ export default function App() {
 
   const handleSaveVolunteer = async (e) => {
     e.preventDefault();
+    if (!isAuthenticated || !currentUser?.email) {
+      setShowAuthModal(true);
+      return;
+    }
     try {
-      const userEmail = currentUser?.email || "commander@ndma.gov.in";
-      const userRole = currentUser?.role || "COMMANDER";
+      const userEmail = currentUser.email.toLowerCase().trim();
+      const userRole = (currentUser.role || "COMMANDER").toUpperCase();
 
       const payload = {
         ...volForm,
@@ -564,16 +568,18 @@ export default function App() {
   };
 
   const handleDeleteVolunteer = async (vol) => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !currentUser?.email) {
       setShowAuthModal(true);
       return;
     }
-    const userEmail = (currentUser?.email || "").toLowerCase();
-    const isOwner = (vol.created_by_email || "").toLowerCase() === userEmail;
-    const isCommander = (currentUser?.role || "").toUpperCase() === "COMMANDER";
+    const userEmail = currentUser.email.toLowerCase().trim();
+    const isOwner = (vol.created_by_email || "").toLowerCase().trim() === userEmail;
+    const isCommander = (currentUser?.role || "").toUpperCase() === "COMMANDER" && userEmail === "commander@ndma.gov.in";
 
     if (!isOwner && !isCommander) {
-      alert(lang === "hi" ? "अनुमति अस्वीकृत: आप केवल अपने बनाए स्वयंसेवक को ही हटा सकते हैं।" : `Permission Denied: Only the creator (${vol.created_by_email}) or Commander can delete it.`);
+      alert(lang === "hi" 
+        ? `अनुमति अस्वीकृत: आप केवल अपने बनाए स्वयंसेवक को ही हटा सकते हैं। (यह रिकॉर्ड ${vol.created_by_email} द्वारा बनाया गया है)` 
+        : `Permission Denied: You cannot delete volunteers created by another user (${vol.created_by_email}).`);
       return;
     }
 
@@ -981,7 +987,7 @@ export default function App() {
             <div className="flex flex-wrap justify-between items-center gap-3">
               <div>
                 <h2 className="text-base md:text-lg font-bold">{t.tabVolunteers}</h2>
-                <p className="text-xs text-slate-400">Manage field responders, mountain rescue specialists and transboundary liaison teams</p>
+                <p className="text-xs text-slate-400">Manage field responders, mountain rescue specialists and transboundary liaison teams (Ownership Protected)</p>
               </div>
               <button 
                 onClick={() => requireAuth(() => {
@@ -1011,9 +1017,10 @@ export default function App() {
                   </thead>
                   <tbody className="divide-y divide-slate-800 text-slate-300">
                     {volunteers.map((v) => {
-                      const userEmail = (currentUser?.email || "").toLowerCase();
-                      const isOwner = isAuthenticated && (v.created_by_email || "").toLowerCase() === userEmail;
-                      const isCommander = isAuthenticated && (currentUser?.role || "").toUpperCase() === "COMMANDER";
+                      const userEmail = (currentUser?.email || "").toLowerCase().trim();
+                      const creatorEmail = (v.created_by_email || "").toLowerCase().trim();
+                      const isOwner = isAuthenticated && (creatorEmail === userEmail);
+                      const isCommander = isAuthenticated && (currentUser?.role || "").toUpperCase() === "COMMANDER" && userEmail === "commander@ndma.gov.in";
                       const canModify = isOwner || isCommander;
 
                       return (
@@ -1102,7 +1109,24 @@ export default function App() {
         {/* TAB 4: CRISIS IMPACT ZONES */}
         {activeTab === "zones" && (
           <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-4">
-            <h2 className="text-base md:text-lg font-bold">{t.tabZones}</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-base md:text-lg font-bold">{t.tabZones}</h2>
+              <button 
+                onClick={async () => {
+                  try {
+                    await axios.post(`${API_BASE}/zones/sync-nepal-data`);
+                    const res = await axios.get(`${API_BASE}/zones`);
+                    setZones(res.data);
+                    alert("Nepal & Global Disaster Zones synchronized successfully!");
+                  } catch (e) {
+                    console.log(e);
+                  }
+                }}
+                className="px-3 py-1.5 bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-700 rounded-lg text-xs font-semibold"
+              >
+                Sync Nepal & World Zones
+              </button>
+            </div>
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-left text-xs min-w-[650px]">
@@ -1154,7 +1178,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 6: SITUATION REPORTS (REAL PDF / PRINTABLE DOWNLOAD) */}
+        {/* TAB 6: SITUATION REPORTS */}
         {activeTab === "reports" && (
           <div className="flex-1 p-4 md:p-6 overflow-y-auto custom-scrollbar space-y-6">
             <div className="flex flex-wrap justify-between items-center gap-3">
@@ -1191,7 +1215,7 @@ export default function App() {
         )}
       </div>
 
-      {/* CONTEXTUAL AUTHENTICATION MODAL (DIRECT REGISTRATION - OTP REMOVED) */}
+      {/* CONTEXTUAL AUTHENTICATION MODAL */}
       {showAuthModal && (
         <div className="fixed inset-0 z-[3000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl relative">
