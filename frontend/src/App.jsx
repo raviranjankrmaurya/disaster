@@ -30,7 +30,8 @@ const redZoneIcon = createCustomIcon("#ef4444", "!");
 const greenDepotIcon = createCustomIcon("#10b981", "H");
 const blueVolIcon = createCustomIcon("#3b82f6", "V");
 
-const API_BASE = "/api/v1";
+// 100% Direct Live Render URL Fallback
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://disaster-67mo.onrender.com/api/v1";
 
 const DEFAULT_WORLD_ZONES = [
   { 
@@ -255,7 +256,6 @@ export default function App() {
   const [authSuccess, setAuthSuccess] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Direct Registration Fields
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authName, setAuthName] = useState("");
@@ -737,7 +737,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center flex-wrap gap-2 md:gap-3">
-            {/* Real Working Priority Multiplier */}
             <div className="flex items-center bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 text-xs">
               <span className="text-slate-400 mr-1.5 text-[11px] font-semibold">{t.priorityWeight}:</span>
               <select 
@@ -799,7 +798,6 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Scrollable Aid Hubs List with sleek custom scrollbar */}
               <div className="overflow-y-auto custom-scrollbar space-y-2.5 max-h-[190px] lg:max-h-[260px] pr-1">
                 {depots.map(d => (
                   <div key={d.id} className="p-3 bg-slate-800/80 hover:bg-slate-800 rounded-xl border border-slate-700/70 text-xs space-y-1.5 transition">
@@ -816,7 +814,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Map Layer Switcher */}
               <div className="p-3 bg-slate-800/90 rounded-xl border border-slate-700/80 space-y-2">
                 <div className="flex justify-between text-xs text-slate-400 font-semibold">
                   <span className="flex items-center"><Layers className="w-3.5 h-3.5 mr-1 text-cyan-400" /> {t.mapLayers}</span>
@@ -838,7 +835,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Real-time Delay Simulation Slider */}
               <div className="p-3 bg-slate-800/90 rounded-xl border border-slate-700/80 space-y-2">
                 <div className="flex justify-between text-xs text-slate-400 font-medium">
                   <span className="flex items-center"><Sliders className="w-3.5 h-3.5 mr-1 text-cyan-400" /> {t.delaySim}</span>
@@ -855,7 +851,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Relief Coverage Metric */}
               <div className="p-3 bg-slate-800/90 rounded-xl border border-slate-700/80 flex items-center justify-between">
                 <div>
                   <div className="text-[10px] text-slate-400 uppercase font-semibold">{t.coverageRate}</div>
@@ -925,7 +920,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right Panel: Live AI Demand Engine (Actively Driven by Priority Multiplier) */}
+            {/* Right Panel: Live AI Demand Engine */}
             <div className="lg:col-span-3 bg-slate-900/90 rounded-2xl p-4 flex flex-col border border-slate-800 space-y-3.5 shadow-xl">
               <div className="border-b border-slate-800 pb-2.5 flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center">
@@ -1279,7 +1274,7 @@ export default function App() {
                     <select 
                       value={authRole} 
                       onChange={(e) => setAuthRole(e.target.value)} 
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-blue-500"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-slate-100 focus:outline-none focus:border-blue-500" 
                     >
                       <option value="COMMANDER">Crisis Commander (Full Authorization)</option>
                       <option value="VOLUNTEER">Field Volunteer & First Responder</option>
@@ -1289,7 +1284,6 @@ export default function App() {
                 </>
               )}
 
-              {/* Email Address */}
               <div>
                 <label className="block text-slate-400 font-semibold mb-1 text-[10px] uppercase">{t.email}</label>
                 <input 
@@ -1302,7 +1296,6 @@ export default function App() {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-slate-400 font-semibold mb-1 text-[10px] uppercase">{t.password}</label>
                 <input 
@@ -1318,7 +1311,7 @@ export default function App() {
               <button 
                 type="submit" 
                 disabled={authLoading}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 rounded-xl text-white font-bold text-xs tracking-wide uppercase transition shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2"
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 rounded-xl text-white font-bold text-xs tracking-wide uppercase transition shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2" 
               >
                 <Lock className="w-4 h-4 mr-1" />
                 <span>{authLoading ? "Authenticating..." : authMode === "register" ? t.registerSubmit : t.loginSubmit}</span>
